@@ -3,9 +3,14 @@
     <body>
         <main></main>
         <!-- https://unpkg.com/hyperapp -->
-        <script src="lib/hyperapp.js"></script>
+        <script src="node_modules/hyperapp/dist/hyperapp.js"></script>
+        <script src="node_modules/hyperapp-context/dist/hyperapp-context.js"></script>
+        <script src="node_modules/hyperapp-nestable/dist/hyperapp-nestable.js"></script>
+        <script src="node_modules/@hyperapp/router/dist/router.js"></script>
+
         <!-- https://unpkg.com/htm -->
-        <script src="lib/htm.js"></script>
+        <script src="node_modules/htm/dist/htm.js"></script>
+
         <style>
             .done {
                 text-decoration: line-through;
@@ -23,7 +28,6 @@
             }
         </style>
 
-        <script src="lib/roots.js"></script>
-        <script src="test.js"></script>
+        <script src="main.js"></script>
     </body>
 </html>

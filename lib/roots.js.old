@@ -1,5 +1,5 @@
 
-const Root = (function(h, app) {
+(typeof module === "object" ? module.exports : window).roots = function Root(h, app) {
 
     // utils
     const hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -137,58 +137,85 @@ const Root = (function(h, app) {
      * wrap view, state and actions to be able to render it in another instance
      */
     const proxy = {
-        state: (id, real) => ({ 
-            ... real,
-            props: {},
-            children: [],
+        state: function (id, original) {
+            return Object.assign({
+                props: {},
+                children: [],
 
-            [reservedKeys.id]: id,
-            [reservedKeys.mounted]: false,
-        }),
-
-        view: real => (state, actions) => state[reservedKeys.mounted]
-            ? real(state, actions)
-            : "",
-
-        actions: real => ({
-            ... real,
-
-            [reservedKeys.create]: (props, children) => oldState => {
-                let state = {
-                    [reservedKeys.mounted]: true,
-                    props: props,
-                    children: children
+                root: {
+                    id: id,
+                    mounted: false
                 }
+            }, original)
+        },
 
-                if (real.create) {
-                    state = Object.assign(
-                        state,
-                        real.create(oldState, props, children)
-                    )
+        view: function (original) {
+            return function (state, actions) {
+                return state.root.mounted ? original(state, actions) : ''
+            }
+        },
+
+        actions: function (original) {
+
+            var createHook = null, updateHook = null, destroyHook = null
+
+            if (hasOwnProperty(original, 'lifecycle')) {
+                if (hasOwnProperty(original.lifecycle, 'create')) {
+                    createHook = original.lifecycle.create
                 }
-                return state
-            },
-
-            [reservedKeys.update]: (props, children) => state => {
-                if (real.update) {
-                    return real.update(state, props, children)
+                if (hasOwnProperty(original.lifecycle, 'update')) {
+                    updateHook = original.lifecycle.update
                 }
-
-                return shallowEqual(state.props, props)
-                    ? state
-                    : { props, children }
-            },
-
-            [reservedKeys.destroy]: () => state => {
-                if (real.destroy) {
-                    real.destroy(state)
-                }
-
-                return {
-                    [reservedKeys.mounted]: false
+                if (hasOwnProperty(original.lifecycle, 'destroy')) {
+                    destroyHook = original.lifecycle.destroy
                 }
             }
-        })
+
+            // lifecycle hooks
+            original.lifecycle = {
+                create: function create(props, children) {
+                    return function (state) {
+                        createHook && createHook(state)
+    
+                        return {
+                            root: {
+                                mounted: true
+                            },
+        
+                            props: props,
+                            children: children
+                        }
+                    }
+                },
+
+                update: function update(props, children) {
+                    return function (state) {
+                        if (updateHook) {
+                            return updateHook.call(state, props, children)
+                        }
+        
+                        return shallowEqual(state.props, props)
+                            ? state
+                            : {
+                                props: props,
+                                children: children
+                            }
+                    }
+                },
+
+                destroy: function destroy() {
+                    return function (state) {
+                        destroyHook && destroyHook(state)
+
+                        return {
+                            root: {
+                                mounted: false
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     function Root(
@@ -199,10 +226,12 @@ const Root = (function(h, app) {
 
         const id = `$Root$${key}`;
 
-        if (roots.hasOwnProperty(id) && roots[id] !== null) {
+        if (hasOwnProperty(roots, id) && roots[id] !== null) {
             // update existing instance
-            roots[id].app[reservedKeys.update](props, children)
+            roots[id].app.lifecycle.update(props, children)
 
+            // returns the original vnode container of the application
+            // to not trigger a re-render under this dom node
             return roots[id].vnode
         } else {
             // create a new instance
@@ -218,12 +247,8 @@ const Root = (function(h, app) {
                 'data-rootid': id
             })
 
-            const oncreate = (element) => {
-                /*
-                create the instance using the proxies for
-                lifecycle actions and needed state keys
-                */
-                const instance = app(
+            function oncreate(element) {
+               const instance = app(
                     proxy.state(id, state), 
                     proxy.actions(actions), 
                     proxy.view(view),
@@ -231,6 +256,8 @@ const Root = (function(h, app) {
                 )
 
                 // update the global map of roots
+                // using the id stored in the data
+                // of the container dom node
                 roots[element.dataset.rootid] = {
 
                     // element reference not used actually
@@ -248,13 +275,14 @@ const Root = (function(h, app) {
                 }
 
                 // mount the instance by calling the 'create' action
-                instance[reservedKeys.create](props, children)
+                instance.lifecycle.create(props, children)
             }
 
-            const onremove = (element, done) => {
+            function onremove(element, done) {
                 const instance = roots[element.dataset.rootid]
                 // unmount the instance if it exists
-                if (instance) instance.app[reservedKeys.destroy]()
+                instance && instance.app.lifecycle.destroy()
+                
                 // set the reference to null for future checks
                 roots[element.dataset.rootid] = null
                 delete roots[element.dataset.rootid]
@@ -263,13 +291,7 @@ const Root = (function(h, app) {
                 done()
             }
 
-            /*
-            here's the trick part
-            The hyperapp instance is created after it's container is rendered in the parent application.
-            Hyperapp says that 'oncreate' hook is called just after the newly created node is inserted, so that's where we can get a reference for our container
-            */
             vnode.attributes.oncreate = oncreate
-
             vnode.attributes.onremove = onremove
 
             return vnode
@@ -277,4 +299,4 @@ const Root = (function(h, app) {
     }
 
     return Root
-})(hyperapp.h, hyperapp.app)
+}

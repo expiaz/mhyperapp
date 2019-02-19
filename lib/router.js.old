@@ -1,0 +1,34 @@
+// <Link go="/path/to" state="{}" />
+
+// <Route component="Component" match="*" />
+
+// <Route [for="Component"] path="/" params="{id: ">
+
+function route (path = '/', params = {}) {
+    return path.replace(/:(\d+|\w+)/g, (_, key) => '(' +
+        (params[key] || '.[^\/]*').toString().slice(1, -1) +
+    ')')
+}
+
+(typeof module === "object" ? module.exports : window).router = {
+    Router: ({ back, forward }, children) => {
+
+    },
+    Route: ({ component = null, path = '/', params = {} }, children) => {
+        if (!router) throw new Error('<Route> instance must be wrapped into <Router>')
+    
+        const keys = []
+        const regexp = new RegExp('^/' + path.replace(
+            /:(\d+|\w+)/g,
+            (_, param) => params[param]
+                // remove starting and ending / from /regexp/
+                ? `(${keys.push(param) && params[param].toString().slice(1, -1)})`
+                : '(.[^\/]*)' // generic capture
+        ) + '$')
+    
+        const match = router.match(regexp, keys)
+        return match
+            ? (component && component(match) || children)
+            : []
+    }
+}

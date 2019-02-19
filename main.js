@@ -1,6 +1,5 @@
-const {htm, hyperapp} = window
 const {h, app} = hyperapp
-
+const {Route, Link} = hyperappRouter
 const html = htm.bind(h)
 
 const filterType = {
@@ -64,7 +63,9 @@ const actions = {
      */
     filter: filter => ({
         filter
-    })
+    }),
+
+    test: () => ({})
 }
 
 
@@ -73,7 +74,7 @@ const Filters = ({ active, click }) => html`
         <span>Filter by :</span>
         ${Object.keys(filterType).map(k => html`
             <a
-                class="filter ${active === filterType[k] && "active"}"
+                class="filter ${active === filterType[k] && "active" || ""}"
                 href="#"
                 onclick="${e => {
                     e.preventDefault()
@@ -122,24 +123,6 @@ const view = (state, actions) => html`
     </div>
 `
 
-const root = (s, a) => html`
-    <div>
-        ${view(s, a)}
-        ${s.id % 2 === 0 ? html`
-            <${Root} key=${s.id} state=${state} view=${view} actions=${{
-                ... actions,
-                destroy: state => {
-                    console.log('destroy', state['$$id$$'])
-                },
-                create: state => {
-                    console.log('create', state['$$id$$'])
-                    return {}
-                }
-            }} props=${{}} />
-        ` : ''}
-    </div>
-`
-
 const container = document.querySelector('main')
 
-const main = app(state, actions, root, container)
+const _app = app(state, actions, view, container)
