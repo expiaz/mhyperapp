@@ -1,5 +1,6 @@
 const {h, app} = hyperapp
 const {Route, Link} = hyperappRouter
+
 const html = htm.bind(h)
 
 const filterType = {
@@ -104,24 +105,30 @@ const TodoList = ({ todos, complete, filter }) => html`
             else if (filter === filterType.TODO && !done) return true;
             else return false;
         }).map(({ id, value, done }) => html`
-            <${Todo} ...${{ id, value, done }} toggle="${complete}" />
+            <Todo ... ${{ id, value, done }} toggle="${complete}" />
         `)}
     </ul>
 `
 
 const view = (state, actions) => html`
     <div>
-        <${Filters} click="${actions.filter}" active="${state.filter}"/>
-        <${TodoList} todos="${state.todos}" complete="${actions.complete}" filter="${state.filter}" />
+        <Filters click=${actions.filter} active=${state.filter} />
+        <TodoList todos=${state.todos} complete=${actions.complete} filter=${state.filter} />
         <input
             name="todo"
             placeholder="to do ..."
-            value="${state.input}"
-            oninput="${({ target: {value} }) => actions.input(value)}"
-            onkeyup="${({ keyCode }) => keyCode === 13 && actions.add()}"
+            value=${state.input}
+            oninput=${({ target: {value} }) => actions.input(value)}
+            onkeyup=${({ keyCode }) => keyCode === 13 && actions.add()}
         />
     </div>
 `
+
+htm.use([
+    Filters,
+    Todo,
+    TodoList
+])
 
 const container = document.querySelector('main')
 
