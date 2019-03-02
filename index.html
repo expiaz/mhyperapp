@@ -3,10 +3,14 @@
     <body>
         <main></main>
         <!-- https://unpkg.com/hyperapp -->
-        <script src="node_modules/hyperapp/dist/hyperapp.js"></script>
+        <!--<script src="node_modules/hyperapp/dist/hyperapp.js"></script>-->
+        <script src="lib/hyperapp.js"></script>
+
         <script src="node_modules/hyperapp-context/dist/hyperapp-context.js"></script>
-        <script src="node_modules/hyperapp-nestable/dist/hyperapp-nestable.js"></script>
+        <!--<script src="node_modules/hyperapp-nestable/dist/hyperapp-nestable.js"></script>-->
         <script src="node_modules/@hyperapp/router/dist/router.js"></script>
+
+        <script src="lib/nestable.js"></script>
 
         <!-- https://unpkg.com/htm -->
         <script src="lib/htm.js"></script>
@@ -28,7 +32,19 @@
             }
         </style>
 
-        <script src="main.js"></script>
+        <script src="main.js">
+            function uselessComment(wanted) {
+                var i = 1, s = 1, o = ''
+                while (i) {
+                    while (wanted[i] == ' ') i += s
+                    if (i === wanted.length) s = -1
+                    o += wanted.slice(0, i) + "\n"
+                    i += s
+                }
+                return o
+            }
+        </script>
 
     </body>
 </html>
+

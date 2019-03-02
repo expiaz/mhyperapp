@@ -1,4 +1,3 @@
-const {h, app} = hyperapp
 const {Route, Link} = hyperappRouter
 
 const html = htm.bind(h)
@@ -64,9 +63,7 @@ const actions = {
      */
     filter: filter => ({
         filter
-    }),
-
-    test: () => ({})
+    })
 }
 
 
@@ -104,11 +101,19 @@ const TodoList = ({ todos, complete, filter }) => html`
             else if (filter === filterType.DONE && done) return true;
             else if (filter === filterType.TODO && !done) return true;
             else return false;
-        }).map(({ id, value, done }) => html`
-            <Todo ... ${{ id, value, done }} toggle="${complete}" />
+        }).map(todo => html`
+            <Todo ... ${todo} toggle="${complete}" />
         `)}
     </ul>
 `
+
+const SeparatedTodoList = nestable('SeparatedTodoList', state, actions, (s, a) => p => html`
+    <div>
+        <h1>${p.title}</h1>
+        ${view(s, a)}
+        <TodoList todos=${p.todos} complete=${a.complete} filter=${s.filter} />
+    </div>
+`)
 
 const view = (state, actions) => html`
     <div>
@@ -124,12 +129,20 @@ const view = (state, actions) => html`
     </div>
 `
 
+const sview = (s, a) => html`
+    <div>
+        ${view(s, a)}
+        <SeparatedTodoList title="second" todos=${s.todos} />
+    </div>
+`
+
 htm.use([
     Filters,
     Todo,
-    TodoList
+    TodoList,
+    SeparatedTodoList
 ])
 
 const container = document.querySelector('main')
 
-const _app = app(state, actions, view, container)
+const main = app(state, actions, sview, container)
